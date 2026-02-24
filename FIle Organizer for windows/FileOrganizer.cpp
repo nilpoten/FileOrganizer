@@ -1,137 +1,137 @@
 #include <iostream>
 #include <filesystem>
 #include <map>
-#include <vector>
 #include <algorithm>
 #include <cstdlib>
 
 namespace fs = std::filesystem;
 using namespace std;
 
-/* -------- FILE TYPE → DESTINATION -------- */
+/* -------- EXTENSION → CATEGORY -------- */
 
-map<string, string> categoryMap = {
+map<string,string> category = {
 
-    // Images
+    // images
     {".jpg","Pictures"}, {".jpeg","Pictures"},
     {".png","Pictures"}, {".gif","Pictures"},
-    {".bmp","Pictures"},
 
-    // Videos
+    // videos
     {".mp4","Videos"}, {".mkv","Videos"},
-    {".avi","Videos"},
+    {".avi","Videos"}, {".mov","Videos"},
 
-    // Music
+    // music
     {".mp3","Music"}, {".wav","Music"},
 
-    // Documents
+    // documents
     {".pdf","Documents"}, {".docx","Documents"},
     {".txt","Documents"}, {".pptx","Documents"},
 
-    // Programs
+    // programs
     {".cpp","Programs"}, {".c","Programs"},
     {".py","Programs"}, {".java","Programs"},
-    {".js","Programs"}, {".html","Programs"}
+    {".js","Programs"}
 };
+
+/* -------- SKIP SYSTEM FOLDERS -------- */
+
+bool shouldSkip(const fs::path& p)
+{
+    string name = p.filename().string();
+
+    return name == "AppData" ||
+           name == "Windows" ||
+           name == "Program Files" ||
+           name == "Program Files (x86)" ||
+           name.starts_with(".");
+}
 
 /* -------- SAFE MOVE -------- */
 
-void moveSafe(const fs::path& file, const fs::path& destinationFolder)
+void moveSafe(const fs::path& src, const fs::path& destFolder)
 {
     try
     {
-        fs::create_directories(destinationFolder);
+        fs::create_directories(destFolder);
 
-        fs::path dest = destinationFolder / file.filename();
+        fs::path dest = destFolder / src.filename();
 
-        int count = 1;
-
-        // avoid overwrite
+        int i = 1;
         while (fs::exists(dest))
         {
-            dest = destinationFolder /
-                (file.stem().string() + "_" +
-                 to_string(count++) +
-                 file.extension().string());
+            dest = destFolder /
+                (src.stem().string() + "_" +
+                 to_string(i++) +
+                 src.extension().string());
         }
 
-        fs::rename(file, dest);
+        fs::rename(src, dest);
 
-        cout << "Moved: " << file << " -> " << dest << endl;
+        cout << "Moved: " << src << " -> " << dest << endl;
     }
-    catch (exception& e)
-    {
-        cout << "Error: " << e.what() << endl;
-    }
+    catch(...) {}
 }
 
-/* -------- ORGANIZER -------- */
-
-void organize(const fs::path& source,
-              const map<string, fs::path>& destinations)
-{
-    if (!fs::exists(source)) return;
-
-    cout << "\nScanning " << source << endl;
-
-    for (auto& entry : fs::directory_iterator(source))
-    {
-        if (!entry.is_regular_file())
-            continue;
-
-        fs::path file = entry.path();
-
-        string ext = file.extension().string();
-        transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-        string category = "Others";
-
-        if (categoryMap.count(ext))
-            category = categoryMap[ext];
-
-        fs::path destination = destinations.at(category);
-
-        moveSafe(file, destination);
-    }
-}
-
-/* -------- MAIN -------- */
+/* -------- MAIN ORGANIZER -------- */
 
 int main()
 {
-    cout << "=== Smart Windows File Organizer ===\n";
-
     const char* user = getenv("USERPROFILE");
 
-    if (!user)
+    if(!user)
     {
-        cout << "User profile not found.\n";
+        cout<<"User profile not found\n";
         return 1;
     }
 
     fs::path home(user);
 
-    /* DESTINATION FOLDERS (REAL WINDOWS ONES) */
-
-    map<string, fs::path> destinations = {
-        {"Pictures",  home / "Pictures"},
-        {"Videos",    home / "Videos"},
-        {"Music",     home / "Music"},
-        {"Documents", home / "Documents"},
-        {"Programs",  home / "Documents" / "Programs"},
-        {"Others",    home / "Documents" / "Others"}
+    /* destination folders */
+    map<string, fs::path> dest = {
+        {"Pictures", home/"Pictures"},
+        {"Videos", home/"Videos"},
+        {"Music", home/"Music"},
+        {"Documents", home/"Documents"},
+        {"Programs", home/"Documents"/"Programs"}
     };
 
-    /* SOURCE FOLDERS TO CLEAN */
+    cout<<"Scanning entire user directory...\n";
 
-    vector<fs::path> sources = {
-        home / "Desktop",
-        home / "Downloads",
-        home / "Documents"
-    };
+    for(auto& entry :
+        fs::recursive_directory_iterator(
+            home,
+            fs::directory_options::skip_permission_denied))
+    {
+        try
+        {
+            if(entry.is_directory())
+            {
+                if(shouldSkip(entry.path()))
+                    entry.disable_recursion_pending();
+                continue;
+            }
 
-    for (auto& folder : sources)
-        organize(folder, destinations);
+            if(!entry.is_regular_file())
+                continue;
 
-    cout << "\n✅ Organization Finished\n";
+            fs::path file = entry.path();
+
+            string ext = file.extension().string();
+            transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+            if(!category.count(ext))
+                continue;
+
+            string cat = category[ext];
+            fs::path correct = dest[cat];
+
+            // already correct location
+            if(file.parent_path() == correct)
+                continue;
+
+            moveSafe(file, correct);
+        }
+        catch(...) {}
+    }
+
+    cout<<"\n✅ Full system organization complete\n";
 }
