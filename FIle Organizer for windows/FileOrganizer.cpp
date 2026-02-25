@@ -155,5 +155,5 @@ int main()
     }
 
     cout << "\n✅ Organization Complete\n";
-    return 0;
+    return 1;
 }
