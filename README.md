@@ -1,111 +1,125 @@
-# 📂 C++ File Organizer (Windows + Linux)
+# 📂 Smart File Organizer (C++17 — Windows)
 
-A lightweight **cross-platform file organizer** written in **C++17** that automatically sorts files from common user folders into structured directories based on file type.
+A lightweight automatic file organizer written in modern **C++17** that scans common user folders and moves misplaced files into their correct Windows directories based on file type.
 
-Works on:
-
-* ✅ Windows 10 / 11
-* ✅ Linux (Arch, Ubuntu, etc.)
-* ✅ Any system supporting C++17 filesystem
+Built using the standard `std::filesystem` library — no external dependencies required.
 
 ---
 
 ## 🚀 Features
 
-* Automatically scans:
+✅ Automatically scans user folders:
 
-  * Desktop
-  * Downloads
-* Organizes files by extension
-* Creates folders automatically
-* Cross-platform (Windows + Linux)
-* Built using modern `std::filesystem`
-* No external libraries required
+- Desktop
+- Downloads
+- Documents
+- Pictures
+- Videos
+- Music
+
+✅ Organizes files globally (not just inside one folder)  
+✅ Moves misplaced files to correct Windows locations  
+✅ Creates required folders automatically  
+✅ Crash-safe filesystem traversal (Windows-safe iteration)  
+✅ Works without administrator privileges  
+✅ Detailed terminal output showing moved files  
+✅ Final summary report after completion  
+
+---
+
+## 🧠 How It Works
+
+The program scans safe user directories and checks each file’s extension.
+
+If a file is located in the wrong folder, it is moved automatically.
+
+Example:
+
+Downloads/photo.jpg   → Pictures/photo.jpg  
+Pictures/movie.mp4    → Videos/movie.mp4  
+Desktop/song.mp3      → Music/song.mp3  
+Documents/code.cpp    → Documents/Programs/code.cpp  
 
 ---
 
 ## 📁 Organization Rules
 
-| File Type                             | Destination Folder   |
-| ------------------------------------- | -------------------- |
-| Images (`.jpg .png .jpeg .gif .webp`) | `Pictures`           |
-| Videos (`.mp4 .mkv .avi .mov`)        | `Videos`             |
-| Documents (`.pdf .docx .txt .pptx`)   | `Documents`          |
-| Programming Files                     | `Documents/Programs` |
-| Archives (`.zip .rar .tar .gz`)       | `Documents/Archives` |
-| Unknown Types                         | `Documents/Others`   |
+| File Type | Destination |
+|---|---|
+| Images (.jpg .jpeg .png .gif .bmp) | Pictures |
+| Videos (.mp4 .mkv .avi .mov) | Videos |
+| Music (.mp3 .wav .flac) | Music |
+| Documents (.pdf .docx .txt .pptx .xlsx) | Documents |
+| Programming Files | Documents/Programs |
+
+Folders are automatically created if they do not exist.
 
 ---
 
-## 🧠 Supported Programming Extensions
+## 💻 Terminal Output
 
-```
-.cpp  .c  .py  .java
-.js   .ts  .html  .css
-.json .sh
-```
+During execution the program displays:
+
+SMART FILE ORGANIZER
+
+Scanning: Downloads  
+[MOVED] cat.jpg -> Pictures  
+[MOVED] video.mp4 -> Videos  
+
+After completion:
+
+Organization Completed Successfully!  
+Files scanned : XXX  
+Files moved   : XX  
+
+Thank you for using Smart File Organizer ❤️
 
 ---
 
 ## ⚙️ Requirements
 
-* C++17 compatible compiler
+- C++17 compatible compiler
+- Windows 10 / Windows 11
 
-### Linux
+Supported compilers:
 
-* GCC 8+ or Clang with filesystem support
-
-### Windows
-
-* MinGW OR Visual Studio 2019+
-
-Check version:
-
-```bash
-g++ --version
-```
+- MinGW-w64
+- GCC (cross-compile from Linux)
+- Visual Studio 2019+
 
 ---
 
 ## 🛠️ Compilation
 
-### 🐧 Linux (Arch / Ubuntu)
+### Compile on Linux (Arch → Windows EXE)
 
-```bash
-g++ FileOrganizer.cpp -o organizer -std=c++17
-```
+Install cross compiler:
 
-Run:
+sudo pacman -S mingw-w64-gcc
 
-```bash
-./organizer
-```
+Build:
+
+x86_64-w64-mingw32-g++ FileOrganizer.cpp -std=c++17 -O2 -static -static-libgcc -static-libstdc++ -o organizer.exe
 
 ---
 
-### 🪟 Windows (MinGW)
+### Compile Directly on Windows (MinGW)
 
-```bash
-g++ FileOrganizer.cpp -o organizer.exe -std=c++17
-```
+g++ FileOrganizer.cpp -std=c++17 -O2 -o organizer.exe
 
 Run:
 
-```bash
 organizer.exe
-```
 
 ---
 
-### 🪟 Windows (Visual Studio)
+### Visual Studio
 
-1. Create **Console Application**
-2. Replace `main.cpp` with `FileOrganizer.cpp`
+1. Create Console Application
+2. Replace main.cpp with FileOrganizer.cpp
 3. Set language standard:
 
-```
 Project Properties → C/C++ → Language → C++17
-```
 
 4. Build and Run.
 
@@ -113,71 +127,50 @@ Project Properties → C/C++ → Language → C++17
 
 ## 📂 Folder Structure Created
 
-```
 Documents/
- ├── Programs/
- ├── Archives/
- └── Others/
-```
+ └── Programs/
 
-Folders are created automatically if they do not exist.
+Created automatically when needed.
 
 ---
 
-## 🔄 Automation (Optional)
+## 🔒 Safety Design
 
-### Linux — Run Every Hour
-
-```bash
-crontab -e
-```
-
-Add:
-
-```
-0 * * * * /home/USERNAME/organizer
-```
-
----
-
-### Windows — Run Automatically
-
-1. Open **Task Scheduler**
-2. Create Basic Task
-3. Select trigger:
-
-   * At logon OR Daily
-4. Action → Start Program
-5. Select `organizer.exe`
+- Skips system directories automatically
+- Avoids Windows junction/symlink crashes
+- Ignores locked or protected files
+- Prevents filename overwriting
+- Requires no admin permissions
+- Uses error-code based filesystem traversal
 
 ---
 
 ## ⚠️ Notes
 
-* Only top-level files in Desktop and Downloads are processed.
-* Existing files with the same name may be skipped.
-* System/hidden files are ignored.
-* Administrator/root privileges are not required.
+- Only standard user folders are scanned.
+- System folders such as AppData are intentionally ignored.
+- Files already in the correct location are not moved.
+- Existing files are never overwritten (renamed automatically).
 
 ---
 
 ## 📈 Future Improvements
 
-* Real-time monitoring (auto organize instantly)
-* Configurable rules via JSON
-* Duplicate file detection
-* GUI interface
-* Logging system
-* Undo operation
+- Preview mode (--dry-run)
+- Undo operation
+- Progress bar
+- Configuration file support
+- GUI application
+- Background auto-organization
 
 ---
 
 ## 📜 License
 
-Open-source — free to use and modify for learning and personal projects.
+Open source — free for learning, modification, and personal use.
 
 ---
 
 ## 👨‍💻 Author
 
-C++ filesystem automation project demonstrating cross-platform file management using modern C++.
+Smart File Organizer — a C++17 filesystem automation project demonstrating practical system-level programming and safe file management.
